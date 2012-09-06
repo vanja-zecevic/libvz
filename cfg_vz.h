@@ -23,46 +23,55 @@
     #include <stdio.h>
     #include <stdlib.h>
 
-    typedef struct cfg_vars_struct {
+    typedef struct {
         void * address;
         char name[256];
         int type;
+        int found;
     } cfg_vars_struct;
 
-    #define SUFFIX_(type_macro) SUFFIX_##type_macro
-    #define SUFFIX_char [256]
-    #define SUFFIX_int
-    #define SUFFIX_float
-    #define SUFFIX_double
+    #define CFG_SUFFIX_(type_macro) CFG_SUFFIX_##type_macro
+    #define CFG_SUFFIX_char [256]
+    #define CFG_SUFFIX_int
+    #define CFG_SUFFIX_float
+    #define CFG_SUFFIX_double
 
-    #define NUM_(type_macro) NUM_PASTE(type_macro)
-    #define NUM_PASTE(type_macro) NUM_##type_macro
-    #define NUM_char 0
-    #define NUM_int 1
-    #define NUM_float 2
-    #define NUM_double 3
+    #define CFG_NUM_(type_macro) CFG_NUM_PASTE(type_macro)
+    #define CFG_NUM_PASTE(type_macro) CFG_NUM_##type_macro
+    #define CFG_NUM_char 0
+    #define CFG_NUM_int 1
+    #define CFG_NUM_float 2
+    #define CFG_NUM_double 3
 
-    #define FORMAT_(type_macro) FORMAT_##type_macro
-    #define FORMAT_char "%s"
-    #define FORMAT_int "%i"
-    #define FORMAT_float "%g"
-    #define FORMAT_double "%g"
+    #define CFG_FORMAT_(type_macro) CFG_FORMAT_##type_macro
+    #define CFG_FORMAT_char "%s"
+    #define CFG_FORMAT_int "%i"
+    #define CFG_FORMAT_float "%g"
+    #define CFG_FORMAT_double "%g"
+
+    #define CFG_DEFAULT_(type_macro) CFG_DEFAULT_##type_macro
+    #define CFG_DEFAULT_char "ds"
+    #define CFG_DEFAULT_int 0 
+    #define CFG_DEFAULT_float 0. 
+    #define CFG_DEFAULT_double 0.f
 
     #define DEFINE_CVARS(var_macro, type_macro) \
-      type_macro var_macro SUFFIX_(type_macro);
+      type_macro var_macro CFG_SUFFIX_(type_macro) = CFG_DEFAULT_(type_macro);
 
     #define POPULATE_CVARS(var_macro, type_macro) \
       cfg_vars[iCFG].address = &var_macro; \
       strncpy(cfg_vars[iCFG].name, #var_macro, 256); \
-      cfg_vars[iCFG++].type = NUM_(type_macro);
+      cfg_vars[iCFG].type = CFG_NUM_(type_macro); \
+      cfg_vars[iCFG++].found = 0;
 
     #define PRINT_CVARS(var_macro, type_macro) \
-      printf(#var_macro " = " FORMAT_(type_macro) "\n", var_macro);
+      printf(#var_macro " = " CFG_FORMAT_(type_macro) "\n", var_macro);
 
     #define COUNT_CVARS(var_macro, type_macro) \
       iCFG++;
 
     int split_vars(char line[256], char var_str[256], char val_str[256]);
     int read_cvars(char * proj_fname, cfg_vars_struct * cfg_vars, int ncvars);
+    void report_unread(cfg_vars_struct * cfg_vars, int ncvars);
 
 #endif

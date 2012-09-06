@@ -85,6 +85,7 @@
     int read_val      = 0;
     char * buffer     = NULL;
     tknlst * tokens   = NULL;
+    FILE * out_f;
 
     void exit_err(char * err_msg);
     void echo_redir();
@@ -94,6 +95,7 @@
     void output_split();
     void write_recurs(int itok, int * valind);
     void reset_all();
+
 %%
 #pragma\ vzg\ split  { if (split==0) {
                            split=1;
@@ -153,7 +155,7 @@
 void echo_redir()
 {
 if (split==1) yytext_to_buffer(); 
-else ECHO;
+else fprintf(out_f,"%s",yytext);
 }
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
 void yytext_to_buffer()
@@ -246,23 +248,23 @@ int ival;
 
 if(itok==split_ntokens) {
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#define %s %s\n", (tokens + idef)->name,
+      fprintf(out_f,"#define %s %s\n", (tokens + idef)->name,
         *((tokens + idef)->vals + *(valind + idef)) );
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#define APND_%s(IN_TOKEN) IN_TOKEN##_%s\n",
+      fprintf(out_f,"#define APND_%s(IN_TOKEN) IN_TOKEN##_%s\n",
         (tokens + idef)->name,
         *((tokens + idef)->vals + *(valind + idef)) );
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#define %s_NUM %i\n", (tokens + idef)->name, *(valind + idef) );
-    printf("%s\n",buffer);
+      fprintf(out_f,"#define %s_NUM %i\n", (tokens + idef)->name, *(valind + idef) );
+    fprintf(out_f,"%s\n",buffer);
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#undef %s\n", (tokens + idef)->name );
+      fprintf(out_f,"#undef %s\n", (tokens + idef)->name );
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#undef APND_%s\n",
+      fprintf(out_f,"#undef APND_%s\n",
         (tokens + idef)->name );
     for (idef=0; idef<split_ntokens; idef++)
-      printf("#undef %s_NUM\n", (tokens + idef)->name );
-    printf("\n");
+      fprintf(out_f,"#undef %s_NUM\n", (tokens + idef)->name );
+    fprintf(out_f,"\n");
 }
 else for(ival=0; ival<(tokens + itok)->nvals; ival++) {
     *(valind + itok) = ival;
@@ -294,5 +296,33 @@ buffer = NULL;
 buffer_leng=0;
 }
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
+int main(int argc, char *argv[])
+{
+int iArgs = 0;
+int outArg = 0;
+/* Make sure at least an input and output file are specified.  */
+if (argc<4) {
+    printf("Usage gen_vz [-h] -o out_fname in_fname\n");
+    return 1;
+}
+else {
+    for (iArgs=1; iArgs<argc; iArgs++) {
+        if(!strcmp(argv[iArgs],"-o")) break;
+    }
+}
+outArg = iArgs;
+/* Fail if -o didnt have 2 subsequent arguments.  */
+if ( (argc-outArg)<=2 ) {
+    printf("Usage gen_vz [-h] -o out_fname in_fname\n");
+    return 1;
+}
+/* Open input and output files.  */
+yyin = fopen( argv[argc-1], "r" );
+out_f = fopen( argv[outArg+1], "w");
 
+yylex();
+
+return 0;
+}
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
 

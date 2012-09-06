@@ -10,3 +10,5 @@ iCFG = 0;
 read_cvars(projfilename, cfg_vars, iCFG);
 #define X_MACRO(AA, BB) PRINT_CVARS(AA, BB)
 #include CVARS_FILE
+
+report_unread(cfg_vars, iCFG);

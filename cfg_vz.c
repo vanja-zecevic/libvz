@@ -71,14 +71,12 @@
 #include "libvz/cfg_vz.h"
 #include "libvz/exit_vz.h"
 /*============================================================================*/
-int read_cvars(char * proj_fname, cfg_vars_struct * cfg_vars, int ncvars) {
-
+int read_cvars(char * proj_fname, cfg_vars_struct * cfg_vars, int ncvars)
+{
 FILE * proj_file;
-
 char cur_line[256];
 char var_str[256];
 char val_str[256];
-
 int ivar;
 int iln;
 
@@ -90,26 +88,27 @@ if (proj_file == NULL) exit_msg("Error opening config file", 1);
 /* Parse the config file.  */
 for (iln=0; iln<1024 && fgets(cur_line, 256, proj_file)!=NULL; iln++) {
     split_vars(cur_line, var_str, val_str);
-    for (ivar=0; ivar<(ncvars-1) && strcmp(cfg_vars[ivar].name, var_str)!=0
-         ; ivar++);
-
-    switch (cfg_vars[ivar].type) {
-    case 0:
-        strncpy(cfg_vars[ivar].address, val_str, 256);
-        *((char*)cfg_vars[ivar].address+ 255) = '\0';
-        break;
-    case 1:
-        *((int*)cfg_vars[ivar].address) = atoi(val_str);
-        break;
-    case 2:
-        *((float*)cfg_vars[ivar].address) = atof(val_str);
-        break;
-    case 3:
-        *((double*)cfg_vars[ivar].address) = atof(val_str);
-        break;
-    default:
-        exit_msg("No type found?", 1);    
-}
+    for (ivar=0; ivar<ncvars; ivar++)
+      if (strcmp(cfg_vars[ivar].name, var_str)==0) {
+        cfg_vars[ivar].found = 1;
+        switch (cfg_vars[ivar].type) {
+        case 0:
+            strncpy(cfg_vars[ivar].address, val_str, 256);
+            *((char*)cfg_vars[ivar].address+ 255) = '\0';
+            break;
+        case 1:
+            *((int*)cfg_vars[ivar].address) = atoi(val_str);
+            break;
+        case 2:
+            *((float*)cfg_vars[ivar].address) = (float)atof(val_str);
+            break;
+        case 3:
+            *((double*)cfg_vars[ivar].address) = atof(val_str);
+            break;
+        default:
+            exit_msg("No type found?", 1);    
+        }
+    }
 }
 return 0;
 }
@@ -156,4 +155,11 @@ else return 1;
 
 }
 /*============================================================================*/
+void report_unread(cfg_vars_struct * cfg_vars, int ncvars)
+{
+int ivar;
 
+for (ivar=0; ivar<ncvars; ivar++) if(cfg_vars[ivar].found==0)
+  printf("cvar \033[1;31m%s\033[00m not found.\n", cfg_vars[ivar].name);
+}
+/*============================================================================*/
